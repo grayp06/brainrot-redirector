@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Secure Redirector Icon Generator</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .icon-container {
+      margin: 20px;
+      border: 1px solid #ddd;
+      padding: 10px;
+      background: #f9f9f9;
+    }
+    canvas {
+      display: block;
+      margin: 10px 0;
+    }
+    p {
+      margin: 5px 0;
+      font-size: 14px;
+      color: #666;
+    }
+  </style>
+</head>
+<body>
+  <h2>Secure Redirector Icons</h2>
+  <p>Right-click each icon and save with the specified filename:</p>
+  
+  <div class="icon-container">
+    <p><strong>icon16.png</strong> (16x16)</p>
+    <canvas id="icon16" width="16" height="16"></canvas>
+  </div>
+  
+  <div class="icon-container">
+    <p><strong>icon48.png</strong> (48x48)</p>
+    <canvas id="icon48" width="48" height="48"></canvas>
+  </div>
+  
+  <div class="icon-container">
+    <p><strong>icon128.png</strong> (128x128)</p>
+    <canvas id="icon128" width="128" height="128"></canvas>
+  </div>
+  
+  <script>
+    // Generate secure-looking icons with a shield design
+    function drawSecureIcon(canvasId, size) {
+      const canvas = document.getElementById(canvasId);
+      const ctx = canvas.getContext('2d');
+      
+      // Clear canvas
+      ctx.clearRect(0, 0, size, size);
+      
+      // Background gradient
+      const gradient = ctx.createLinearGradient(0, 0, size, size);
+      gradient.addColorStop(0, '#5cb85c');
+      gradient.addColorStop(1, '#4CAF50');
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, size, size);
+      
+      // Draw shield shape
+      ctx.fillStyle = 'white';
+      ctx.strokeStyle = 'white';
+      ctx.lineWidth = size / 16;
+      
+      const centerX = size / 2;
+      const centerY = size / 2;
+      const shieldSize = size * 0.6;
+      
+      ctx.beginPath();
+      // Shield path
+      ctx.moveTo(centerX, centerY - shieldSize/2);
+      ctx.lineTo(centerX - shieldSize/2, centerY - shieldSize/3);
+      ctx.lineTo(centerX - shieldSize/2, centerY);
+      ctx.quadraticCurveTo(centerX - shieldSize/2, centerY + shieldSize/2, centerX, centerY + shieldSize/2);
+      ctx.quadraticCurveTo(centerX + shieldSize/2, centerY + shieldSize/2, centerX + shieldSize/2, centerY);
+      ctx.lineTo(centerX + shieldSize/2, centerY - shieldSize/3);
+      ctx.closePath();
+      ctx.fill();
+      
+      // Add lock symbol in shield
+      ctx.fillStyle = '#4CAF50';
+      const lockSize = shieldSize * 0.4;
+      
+      // Lock body
+      ctx.fillRect(centerX - lockSize/3, centerY - lockSize/6, lockSize*2/3, lockSize/2);
+      
+      // Lock shackle
+      ctx.strokeStyle = '#4CAF50';
+      ctx.lineWidth = size / 20;
+      ctx.beginPath();
+      ctx.arc(centerX, centerY - lockSize/4, lockSize/3, Math.PI, 2 * Math.PI, false);
+      ctx.stroke();
+    }
+    
+    // Generate all icon sizes
+    drawSecureIcon('icon16', 16);
+    drawSecureIcon('icon48', 48);
+    drawSecureIcon('icon128', 128);
+  </script>
+</body>
+</html>
