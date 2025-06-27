@@ -528,6 +528,11 @@ async function ensureHostPermissions(domains) {
   }
   return new Promise((resolve) => {
     chrome.permissions.request({ origins: originsToRequest }, (granted) => {
+      if (chrome.runtime.lastError) {
+        console.error('Permission request failed', chrome.runtime.lastError);
+        resolve(false);
+        return;
+      }
       resolve(granted);
     });
   });
