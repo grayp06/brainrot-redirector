@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Smart Site Redirector",
-  "version": "2.3",
+  "version": "2.5",
   "description": "Secure, privacy-focused site redirector for productivity",
   "permissions": [
     "storage",
@@ -17,7 +17,9 @@
     "*://reddit.com/*",
     "*://*.reddit.com/*"
   ],
-  "optional_host_permissions": [],
+  "optional_host_permissions": [
+    "*://*/*"
+  ],
   "background": {
     "service_worker": "background.js"
   },
