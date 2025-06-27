@@ -235,6 +235,12 @@ async function saveRule() {
     enabled: enabled,
     priority: 3 // General priority
   };
+
+  const granted = await ensureHostPermissions(from);
+  if (!granted) {
+    showStatus('Host permission denied for one or more domains', 'error');
+    return;
+  }
   
   // Add or update rule
   if (editingRuleIndex !== null) {
@@ -412,7 +418,13 @@ async function addToWhitelist() {
     showStatus('Domain already whitelisted', 'error');
     return;
   }
-  
+
+  const granted = await ensureHostPermissions([domain]);
+  if (!granted) {
+    showStatus('Host permission denied for domain', 'error');
+    return;
+  }
+
   // Add to whitelist
   whitelistedDomains.push(domain);
   await saveToStorage({ whitelistedDomains });
@@ -460,6 +472,8 @@ async function importSettings(event) {
     if (response.success) {
       showStatus(`Imported ${response.rulesImported} rules successfully`, 'success');
       await loadSettings(); // Reload UI
+      const domains = rules.flatMap(r => r.from).concat(whitelistedDomains);
+      await ensureHostPermissions(domains);
     } else {
       showStatus(`Import failed: ${response.error}`, 'error');
     }
@@ -495,8 +509,26 @@ function showStatus(message, type) {
   const statusDiv = document.getElementById('statusMessage');
   statusDiv.textContent = message;
   statusDiv.className = `status-message ${type}`;
-  
+
   setTimeout(() => {
     statusDiv.className = 'status-message';
   }, 3000);
+}
+
+// Ensure host permissions for given domains
+async function ensureHostPermissions(domains) {
+  const originsToRequest = [];
+  for (const domain of domains) {
+    const origin = `*://${domain}/*`;
+    const hasPermission = await chrome.permissions.contains({ origins: [origin] });
+    if (!hasPermission) originsToRequest.push(origin);
+  }
+  if (originsToRequest.length === 0) {
+    return true;
+  }
+  return new Promise((resolve) => {
+    chrome.permissions.request({ origins: originsToRequest }, (granted) => {
+      resolve(granted);
+    });
+  });
 }
