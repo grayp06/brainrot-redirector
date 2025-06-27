@@ -236,13 +236,7 @@ async function saveRule() {
     priority: 3 // General priority
   };
 
-  const granted = await ensureHostPermissions(from);
-  if (!granted) {
-    showStatus('Host permission denied for one or more domains', 'error');
-    return;
-  }
-  
-  // Add or update rule
+  // Add or update rule first
   if (editingRuleIndex !== null) {
     rules[editingRuleIndex] = rule;
   } else {
@@ -256,7 +250,17 @@ async function saveRule() {
   await loadSettings();
   closeRuleModal();
   
-  showStatus(editingRuleIndex !== null ? 'Rule updated successfully' : 'Rule added successfully', 'success');
+  // Request permissions after saving (non-blocking)
+  ensureHostPermissions(from).then(granted => {
+    if (granted) {
+      showStatus(editingRuleIndex !== null ? 'Rule updated successfully' : 'Rule added successfully', 'success');
+    } else {
+      showStatus('Rule saved but permission denied - rule may not work properly', 'error');
+    }
+  });
+  
+  // Show immediate feedback
+  showStatus('Rule saved, requesting permissions...', 'success');
 }
 
 // Tab management
