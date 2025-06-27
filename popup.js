@@ -1,15 +1,18 @@
-// Enhanced popup interface with security and privacy features
+// popup.js
+// Enhanced popup interface with full CRUD operations for rules
 
 // State management
 let currentTab = 'rules';
 let rules = [];
 let whitelistedDomains = [];
+let editingRuleIndex = null;
 
 // Initialize popup
 document.addEventListener('DOMContentLoaded', async () => {
   await loadSettings();
   setupEventListeners();
   setupTabs();
+  setupRuleModal();
 });
 
 // Load all settings
@@ -50,6 +53,11 @@ function setupEventListeners() {
   document.getElementById('masterToggle').addEventListener('change', async (e) => {
     await saveToStorage({ extensionEnabled: e.target.checked });
     displayRules(rules, e.target.checked);
+  });
+  
+  // Add new rule button
+  document.getElementById('addRuleBtn').addEventListener('click', () => {
+    openRuleModal();
   });
   
   // Privacy mode toggle
@@ -109,6 +117,142 @@ function setupEventListeners() {
   });
 }
 
+// Setup rule modal
+function setupRuleModal() {
+  const modal = document.getElementById('ruleModal');
+  const saveBtn = document.getElementById('saveRuleBtn');
+  const cancelBtn = document.getElementById('cancelRuleBtn');
+  const deleteBtn = document.getElementById('deleteRuleBtn');
+  
+  // Save rule
+  saveBtn.addEventListener('click', saveRule);
+  
+  // Cancel
+  cancelBtn.addEventListener('click', () => {
+    closeRuleModal();
+  });
+  
+  // Delete rule
+  deleteBtn.addEventListener('click', async () => {
+    if (confirm('Are you sure you want to delete this rule?')) {
+      rules.splice(editingRuleIndex, 1);
+      await saveToStorage({ rules });
+      await loadSettings();
+      closeRuleModal();
+      showStatus('Rule deleted successfully', 'success');
+    }
+  });
+  
+  // Close modal on background click
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) {
+      closeRuleModal();
+    }
+  });
+}
+
+// Open rule modal for add/edit
+function openRuleModal(ruleIndex = null) {
+  const modal = document.getElementById('ruleModal');
+  const modalTitle = document.getElementById('modalTitle');
+  const deleteBtn = document.getElementById('deleteRuleBtn');
+  
+  editingRuleIndex = ruleIndex;
+  
+  if (ruleIndex !== null) {
+    // Edit mode
+    modalTitle.textContent = 'Edit Rule';
+    deleteBtn.style.display = 'block';
+    
+    const rule = rules[ruleIndex];
+    document.getElementById('ruleName').value = rule.id || `Rule ${ruleIndex + 1}`;
+    document.getElementById('ruleFrom').value = rule.from.join('\n');
+    document.getElementById('ruleTo').value = rule.to;
+    document.getElementById('ruleEnabled').checked = rule.enabled;
+  } else {
+    // Add mode
+    modalTitle.textContent = 'Add New Rule';
+    deleteBtn.style.display = 'none';
+    
+    // Clear form
+    document.getElementById('ruleName').value = '';
+    document.getElementById('ruleFrom').value = '';
+    document.getElementById('ruleTo').value = '';
+    document.getElementById('ruleEnabled').checked = true;
+  }
+  
+  modal.style.display = 'block';
+}
+
+// Close rule modal
+function closeRuleModal() {
+  document.getElementById('ruleModal').style.display = 'none';
+  editingRuleIndex = null;
+}
+
+// Save rule (add or update)
+async function saveRule() {
+  const name = document.getElementById('ruleName').value.trim();
+  const fromText = document.getElementById('ruleFrom').value.trim();
+  const to = document.getElementById('ruleTo').value;
+  const enabled = document.getElementById('ruleEnabled').checked;
+  
+  // Validation
+  if (!name) {
+    showStatus('Please enter a rule name', 'error');
+    return;
+  }
+  
+  if (!fromText) {
+    showStatus('Please enter at least one source URL', 'error');
+    return;
+  }
+  
+  if (!to) {
+    showStatus('Please select a destination', 'error');
+    return;
+  }
+  
+  // Parse from URLs
+  const from = fromText.split('\n')
+    .map(url => url.trim())
+    .filter(url => url.length > 0)
+    .map(url => {
+      // Clean up URLs - remove protocol and trailing slashes
+      return url.replace(/^https?:\/\//, '').replace(/\/$/, '');
+    });
+  
+  if (from.length === 0) {
+    showStatus('Please enter valid source URLs', 'error');
+    return;
+  }
+  
+  // Create rule object
+  const rule = {
+    id: name,
+    from: from,
+    to: to,
+    enabled: enabled,
+    priority: 3 // General priority
+  };
+  
+  // Add or update rule
+  if (editingRuleIndex !== null) {
+    rules[editingRuleIndex] = rule;
+  } else {
+    rules.push(rule);
+  }
+  
+  // Save to storage
+  await saveToStorage({ rules });
+  
+  // Reload settings and close modal
+  await loadSettings();
+  closeRuleModal();
+  
+  showStatus(editingRuleIndex !== null ? 'Rule updated successfully' : 'Rule added successfully', 'success');
+}
+
 // Tab management
 function setupTabs() {
   const tabs = document.querySelectorAll('.tab');
@@ -130,19 +274,28 @@ function setupTabs() {
   });
 }
 
-// Display redirect rules
+// Display redirect rules with edit buttons
 function displayRules(rules, extensionEnabled) {
   const container = document.getElementById('rulesContainer');
   container.innerHTML = '';
   
   if (rules.length === 0) {
-    container.innerHTML = '<p style="text-align: center; color: #999;">No redirect rules configured</p>';
+    container.innerHTML = '<p style="text-align: center; color: #999;">No redirect rules configured. Click "Add New Rule" to get started!</p>';
     return;
   }
   
   rules.forEach((rule, index) => {
     const ruleDiv = document.createElement('div');
     ruleDiv.className = 'rule' + (!extensionEnabled ? ' disabled' : '');
+    
+    // Create edit button
+    const editBtn = document.createElement('button');
+    editBtn.className = 'rule-edit-btn';
+    editBtn.textContent = 'Edit';
+    editBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      openRuleModal(index);
+    });
     
     // Create rule header with toggle
     const headerDiv = document.createElement('div');
@@ -161,6 +314,7 @@ function displayRules(rules, extensionEnabled) {
     switchInput.checked = rule.enabled;
     switchInput.disabled = !extensionEnabled;
     switchInput.addEventListener('change', async (e) => {
+      e.stopPropagation();
       rules[index].enabled = e.target.checked;
       await saveToStorage({ rules: rules });
     });
@@ -200,6 +354,7 @@ function displayRules(rules, extensionEnabled) {
     detailsDiv.appendChild(toSpan);
     detailsDiv.appendChild(securityBadge);
     
+    ruleDiv.appendChild(editBtn);
     ruleDiv.appendChild(headerDiv);
     ruleDiv.appendChild(detailsDiv);
     container.appendChild(ruleDiv);

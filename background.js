@@ -1,4 +1,3 @@
-// background.js
 // Enhanced service worker with security, performance, and privacy features
 
 // Constants for security and performance
@@ -164,6 +163,8 @@ function isAllowedDestination(domain) {
 
 // Initialize extension with security checks
 chrome.runtime.onInstalled.addListener(async () => {
+  console.log('Extension installed/updated');
+  
   const data = await secureStorage.get(['rules', 'extensionEnabled', 'privacyMode', 'whitelistedDomains']);
   
   // Validate and sanitize existing rules
@@ -200,7 +201,12 @@ chrome.runtime.onInstalled.addListener(async () => {
     await secureStorage.set(updates);
   }
   
+  // Force immediate rule update
   await updateRedirectRules();
+  
+  // Log current rules for debugging
+  const currentRules = await chrome.declarativeNetRequest.getDynamicRules();
+  console.log('Rules after installation:', currentRules);
 });
 
 // Performance-optimized rule update function

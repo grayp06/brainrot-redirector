@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Smart Site Redirector",
-  "version": "2.1",
+  "version": "2.2",
   "description": "Secure, privacy-focused site redirector for productivity",
   "permissions": [
     "storage",
@@ -12,12 +12,7 @@
     "notifications"
   ],
   "host_permissions": [
-    "*://youtube.com/*",
-    "*://www.youtube.com/*",
-    "*://m.youtube.com/*",
-    "*://reddit.com/*",
-    "*://www.reddit.com/*",
-    "*://old.reddit.com/*"
+    "<all_urls>"
   ],
   "background": {
     "service_worker": "background.js"
