@@ -19,9 +19,7 @@
   ],
   "optional_host_permissions": [
     "*://*/*"
-
   ],
-  "optional_host_permissions": [],
   "background": {
     "service_worker": "background.js"
   },

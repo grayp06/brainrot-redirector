@@ -533,7 +533,6 @@ async function ensureHostPermissions(domains) {
         resolve(false);
         return;
       }
-}
       resolve(granted);
     });
   });
