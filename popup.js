@@ -63,22 +63,29 @@ function setupEventListeners() {
   // Privacy mode toggle
   document.getElementById('privacyMode').addEventListener('change', async (e) => {
     const enabled = e.target.checked;
-    
-    // Save to both local and sync storage
-    await chrome.storage.local.set({ privacyMode: enabled });
-    
+
     if (enabled) {
-      // Copy sync data to local
+      // Remove any stale privacyMode flag from sync storage
+      await chrome.storage.sync.remove('privacyMode');
+
+      // Copy all sync data to local, excluding privacyMode to avoid overwrite
       const syncData = await chrome.storage.sync.get(null);
+      delete syncData.privacyMode;
       await chrome.storage.local.set(syncData);
+
+      // Persist privacy mode in local storage
+      await chrome.storage.local.set({ privacyMode: true });
       showStatus('Privacy mode enabled - data stored locally only', 'success');
     } else {
-      // Copy local data back to sync
-      const localData = await chrome.storage.local.get(['rules', 'extensionEnabled', 'whitelistedDomains']);
-      await chrome.storage.sync.set(localData);
+      // Copy relevant local data back to sync storage
+      const localData = await chrome.storage.local.get(['rules', 'extensionEnabled', 'whitelistedDomains', 'incognitoMode']);
+      await chrome.storage.sync.set({ ...localData, privacyMode: false });
+
+      // Update local flag
+      await chrome.storage.local.set({ privacyMode: false });
       showStatus('Privacy mode disabled - data will sync across devices', 'success');
     }
-    
+
     updatePrivacyIndicator(enabled);
   });
   
