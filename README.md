@@ -19,6 +19,9 @@ incognito windows.
 - **Import/Export** – Backup your rules to a JSON file or restore them later.
 - **Loop prevention and validation** – URLs are sanitized and checked against an
 allowed destination list to avoid unsafe or infinite redirects.
+- **Domain-scoped permissions** – The extension only requests host access for
+  domains you specify in rules or the whitelist. Any additional domains are
+  requested individually using optional host permissions, minimizing exposure.
 
 ## How It Works
 
